@@ -2522,6 +2522,16 @@ function getSfCredentials() {
   return creds;
 }
 
+// -- Strip leading comment lines from SQL so only executable SQL is sent --
+function stripLeadingComments(sql) {
+  const lines = sql.split('\n');
+  let start = 0;
+  while (start < lines.length && lines[start].trim().startsWith('--')) {
+    start++;
+  }
+  return start < lines.length ? lines.slice(start).join('\n').trim() : sql.trim();
+}
+
 // -- Execute a single SQL statement via Snowflake SQL REST API using PAT --
 async function sfExecuteStatement(creds, sql) {
   const url = `https://${creds.account}.snowflakecomputing.com/api/v2/statements`;
@@ -2579,7 +2589,7 @@ async function testSfConnection() {
 
 // -- Categorize a SQL statement for display --
 function categorizeStatement(sql) {
-  const upper = sql.toUpperCase().trim();
+  const upper = stripLeadingComments(sql).toUpperCase().trim();
   if (upper.startsWith('CREATE DATABASE') || upper.startsWith('CREATE SCHEMA') || upper.startsWith('CREATE OR REPLACE DATABASE') || upper.startsWith('CREATE OR REPLACE SCHEMA'))
     return 'DB/Schema';
   if (upper.startsWith('CREATE STAGE') || upper.startsWith('CREATE OR REPLACE STAGE')) return 'Stage';
@@ -2667,6 +2677,10 @@ async function saveAndPromptExecution() {
     }
   });
 
+  console.log('[VQL Migrator] Collected', statements.length, 'statements:', 
+    catOrder.map(c => c + ':' + (gen[c]?.length || 0)).join(', '));
+  console.log('[VQL Migrator] Statement categories:', statements.map(s => categorizeStatement(s)));
+
   if (statements.length === 0) {
     showToast('No executable statements found.');
     return;
@@ -2707,7 +2721,8 @@ async function saveAndPromptExecution() {
     let ok = false;
     let errMsg = '';
     try {
-      await sfExecuteStatement(creds, sql);
+      const cleanSQL = stripLeadingComments(sql);
+      await sfExecuteStatement(creds, cleanSQL);
       ok = true;
     } catch (e) {
       errMsg = e.message || 'Unknown error';
