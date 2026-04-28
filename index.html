@@ -2163,11 +2163,11 @@ CREATE OR REPLACE PROCEDURE ${loc.fqn}(${dv.params.replace(/\b(?:IN|OUT|INOUT)\s
   RETURNS TABLE()
   LANGUAGE SQL
   AS
-  $$
+  BEGIN
     -- Original body (adapt Denodo SQL to Snowflake SQL):
     -- ${(dv.body || '').substring(0, 200).replace(/\n/g, '\n    -- ')}
     SELECT 'TODO: migrate query logic' AS status;
-  $$;`
+  END;`
       );
     } else {
       result.views.push(
@@ -2197,10 +2197,10 @@ CREATE OR REPLACE PROCEDURE ${loc.fqn}(${paramList})
   RETURNS VARCHAR
   LANGUAGE SQL
   AS
-  $$
+  BEGIN
     -- Body summary: ${proc.bodySummary || 'N/A'}
     RETURN 'TODO: migrate procedure logic';
-  $$;`
+  END;`
     );
   });
 
