@@ -2651,14 +2651,18 @@ async function saveAndPromptExecution() {
     if (gen && gen[cat]) {
       gen[cat].forEach(sql => {
         const trimmed = sql.trim();
-        if (trimmed && !trimmed.startsWith('--')) {
-          // Split on semicolons to handle multi-statement strings, but keep procedure bodies intact
-          const parts = trimmed.split(/;\s*(?=\s*(?:CREATE|ALTER|GRANT|USE|DROP|INSERT|UPDATE|DELETE|MERGE)\s)/i);
-          parts.forEach(p => {
-            const s = p.trim().replace(/;$/, '').trim();
-            if (s && !s.startsWith('--')) statements.push(s);
-          });
-        }
+        if (!trimmed) return;
+        // Split on semicolons that precede a SQL keyword (keeps procedure bodies with $$ intact)
+        const parts = trimmed.split(/;\s*(?=\s*(?:CREATE|ALTER|GRANT|USE|DROP|INSERT|UPDATE|DELETE|MERGE)\s)/i);
+        parts.forEach(p => {
+          const s = p.trim().replace(/;$/, '').trim();
+          if (!s) return;
+          // Skip blocks that are purely comments (no executable SQL)
+          const nonCommentLines = s.split('\n').filter(l => !l.trim().startsWith('--'));
+          if (nonCommentLines.some(l => l.trim().length > 0)) {
+            statements.push(s);
+          }
+        });
       });
     }
   });
