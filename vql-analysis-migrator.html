@@ -2159,7 +2159,7 @@ COMMENT = 'Migrated from Denodo cross-source view ${dv.name}';`
 `-- Parameterized view: ${dv.name}
 -- Parameters: ${dv.params}
 -- Snowflake views cannot accept parameters; converted to stored procedure
-CREATE OR REPLACE PROCEDURE ${loc.fqn}(${dv.params.replace(/:\s*\w+/g, ' VARCHAR')})
+CREATE OR REPLACE PROCEDURE ${loc.fqn}(${dv.params.replace(/\b(?:IN|OUT|INOUT)\s+/gi, '').replace(/:\s*\w+/g, ' VARCHAR')})
   RETURNS TABLE()
   LANGUAGE SQL
   AS
@@ -2188,7 +2188,7 @@ CREATE OR REPLACE VIEW ${loc.fqn}
   analysis.procedures.forEach(proc => {
     const loc = findSchema(proc.name, proc.folder);
     const paramList = proc.params !== 'none'
-      ? proc.params.replace(/:\s*\w+/g, ' VARCHAR')
+      ? proc.params.replace(/\b(?:IN|OUT|INOUT)\s+/gi, '').replace(/:\s*\w+/g, ' VARCHAR')
       : '';
     result.procedures.push(
 `-- Stored Procedure: ${proc.name}
